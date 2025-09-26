@@ -53,14 +53,14 @@ type NeutronExporter struct {
 var defaultNeutronMetrics = []Metric{
 	{Name: "floating_ips", Fn: ListFloatingIps},
 	{Name: "floating_ips_associated_not_active"},
-	{Name: "floating_ip", Labels: []string{"id", "floating_network_id", "router_id", "status", "project_id", "floating_ip_address"}},
+	{Name: "floating_ip", Labels: []string{"id", "floating_network_id", "router_id", "status", "project_id", "floating_ip_address", "port_id"}},
 	{Name: "networks", Fn: ListNetworks},
 	{Name: "network", Labels: []string{"id", "tenant_id", "status", "name", "is_shared", "is_external", "provider_network_type",
 		"provider_physical_network", "provider_segmentation_id", "subnets", "tags"}},
 	{Name: "security_groups", Fn: ListSecGroups},
 	{Name: "subnets", Fn: ListSubnets},
 	{Name: "subnet", Labels: []string{"id", "tenant_id", "name", "network_id", "cidr", "gateway_ip", "enable_dhcp", "dns_nameservers", "tags"}},
-	{Name: "port", Labels: []string{"uuid", "network_id", "mac_address", "device_owner", "status", "binding_vif_type", "admin_state_up", "fixed_ips"}, Fn: ListPorts},
+	{Name: "port", Labels: []string{"uuid", "network_id", "mac_address", "device_id", "device_owner", "status", "binding_vif_type", "admin_state_up", "fixed_ips"}, Fn: ListPorts},
 	{Name: "ports"},
 	{Name: "ports_no_ips"},
 	{Name: "ports_lb_not_active"},
@@ -124,7 +124,7 @@ func ListFloatingIps(exporter *BaseOpenStackExporter, ch chan<- prometheus.Metri
 	failedFIPs := 0
 	for _, fip := range allFloatingIPs {
 		ch <- prometheus.MustNewConstMetric(exporter.Metrics["floating_ip"].Metric,
-			prometheus.GaugeValue, 1, fip.ID, fip.FloatingNetworkID, fip.RouterID, fip.Status, fip.ProjectID, fip.FloatingIP)
+			prometheus.GaugeValue, 1, fip.ID, fip.FloatingNetworkID, fip.RouterID, fip.Status, fip.ProjectID, fip.FloatingIP, fip.PortID)
 		if fip.FixedIP != "" {
 			if fip.Status != "ACTIVE" {
 				failedFIPs = failedFIPs + 1
@@ -303,8 +303,8 @@ func ListPorts(exporter *BaseOpenStackExporter, ch chan<- prometheus.Metric) err
 				}
 			}
 			ch <- prometheus.MustNewConstMetric(exporter.Metrics["port"].Metric,
-				prometheus.GaugeValue, 1, port.ID, port.NetworkID, port.MACAddress, port.DeviceOwner,
-				port.Status, port.VIFType, strconv.FormatBool(port.AdminStateUp), fixedIPs)
+				prometheus.GaugeValue, 1, port.ID, port.NetworkID, port.MACAddress, port.DeviceID,
+				port.DeviceOwner, port.Status, port.VIFType, strconv.FormatBool(port.AdminStateUp), fixedIPs)
 		}
 	}
 
